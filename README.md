@@ -15,8 +15,7 @@ API de gerenciamento de produtos com cache Redis integrado, desenvolvida em Go u
 
 ```
 ├── cmd/
-│   ├── api/           # Entry point da aplicação
-│   └── migrate/       # Ferramenta de migração do banco
+│   └── api/           # Entry point da aplicação
 ├── internal/
 │   ├── domain/        # Entidades e interfaces (sem dependências)
 │   ├── application/   # Casos de uso (regras de negócio)
@@ -26,14 +25,14 @@ API de gerenciamento de produtos com cache Redis integrado, desenvolvida em Go u
 │       ├── http/      # Handlers, middleware, rotas
 │       ├── config/    # Configuração
 │       └── logger/    # Logging estruturado
-└── migrations/        # SQL migrations
 ```
 
 ## Pré-requisitos
 
 - Go 1.23+
 - Docker e Docker Compose
-- Make (opcional)
+- PostgreSQL 15+
+- Redis 7+
 
 ## Configuração Rápida
 
@@ -50,40 +49,47 @@ cp .env.example .env
 ### 2. Inicie os serviços (PostgreSQL e Redis)
 
 ```bash
-# Usando Make
-make docker-up
-
-# Ou diretamente com Docker Compose
 docker-compose up -d
 ```
 
 ### 3. Instale as dependências
 
 ```bash
-# Usando Make
-make setup
-
-# Ou diretamente
 go mod download
 ```
 
-### 4. Execute as migrations
+### 4. Prepare o banco de dados
 
-```bash
-# Usando Make
-make migrate-up
+Conecte ao PostgreSQL e execute as seguintes queries para criar a tabela de produtos:
 
-# Ou diretamente
-go run cmd/migrate/main.go up
+```sql
+-- Criar tabela de produtos
+CREATE TABLE IF NOT EXISTS products (
+    id VARCHAR(26) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    reference_number VARCHAR(100) NOT NULL UNIQUE,
+    category VARCHAR(100) NOT NULL,
+    description TEXT,
+    sku VARCHAR(100),
+    brand VARCHAR(100),
+    stock INTEGER NOT NULL DEFAULT 0,
+    images TEXT[],
+    specifications JSONB,
+    version INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- Índices para otimização de buscas
+CREATE INDEX IF NOT EXISTS idx_products_name ON products USING GIN (to_tsvector('portuguese', name));
+CREATE INDEX IF NOT EXISTS idx_products_category ON products (category);
+CREATE INDEX IF NOT EXISTS idx_products_reference ON products (reference_number);
+CREATE INDEX IF NOT EXISTS idx_products_created_at ON products (created_at DESC);
 ```
 
 ### 5. Inicie a API
 
 ```bash
-# Usando Make
-make run
-
-# Ou diretamente
 go run cmd/api/main.go
 ```
 
@@ -319,7 +325,7 @@ Content-Type: application/json
 # Níveis disponíveis: debug, info, warn, error, dpanic, panic, fatal
 ```
 
-Útil para troubleshooting em produção. Veja [DYNAMIC_LOG_LEVEL.md](DYNAMIC_LOG_LEVEL.md) para detalhes.
+Útil para troubleshooting em produção sem necessidade de restart.
 
 ### Métricas Prometheus
 
@@ -347,32 +353,18 @@ curl http://localhost:8080/health/ready
 
 ## Desenvolvimento
 
-### Comandos Make Disponíveis
-
-```bash
-make help           # Mostra todos os comandos
-make setup          # Instala dependências
-make docker-up      # Inicia Docker containers
-make docker-down    # Para Docker containers
-make build          # Compila a aplicação
-make run            # Executa a aplicação
-make test           # Roda testes
-make test-coverage  # Gera relatório de cobertura
-make migrate-up     # Aplica migrations
-make migrate-down   # Reverte migrations
-make start          # Inicia tudo (docker + migrate + run)
-make stop           # Para tudo
-make clean          # Limpa artefatos de build
-```
-
 ### Rodando Testes
 
 ```bash
 # Todos os testes
-make test
+go test ./...
 
-# Com relatório de cobertura
-make test-coverage
+# Com cobertura
+go test -cover ./...
+
+# Gerar relatório de cobertura HTML
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out -o coverage.html
 ```
 
 ### Estrutura de Testes

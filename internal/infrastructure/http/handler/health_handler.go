@@ -28,12 +28,22 @@ func NewHealthHandler(
 	}
 }
 
+// HealthResponse representa a resposta de health check
+// @Description Status de saúde da aplicação e seus serviços
 type HealthResponse struct {
-	Status    string            `json:"status"`
-	Timestamp time.Time         `json:"timestamp"`
+	Status    string            `json:"status" example:"healthy"`
+	Timestamp time.Time         `json:"timestamp" example:"2024-01-15T10:30:00Z"`
 	Services  map[string]string `json:"services"`
 }
 
+// Liveness godoc
+// @Summary      Liveness check
+// @Description  Verifica se a aplicação está rodando
+// @Tags         health
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  HealthResponse
+// @Router       /health/live [get]
 func (h *HealthHandler) Liveness(w http.ResponseWriter, r *http.Request) {
 	response := HealthResponse{
 		Status:    "healthy",
@@ -45,6 +55,15 @@ func (h *HealthHandler) Liveness(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// Readiness godoc
+// @Summary      Readiness check
+// @Description  Verifica se a aplicação está pronta para receber requisições (database e cache)
+// @Tags         health
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  HealthResponse
+// @Failure      503  {object}  HealthResponse
+// @Router       /health/ready [get]
 func (h *HealthHandler) Readiness(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()

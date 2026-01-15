@@ -10,12 +10,14 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
 )
 
 func SetupRouter(
 	productHandler *handler.ProductHandler,
 	healthHandler *handler.HealthHandler,
+	jwtAuth *middleware.JWTAuth,
 	atomicLevel *zap.AtomicLevel,
 	logger *zap.Logger,
 ) http.Handler {
@@ -36,15 +38,23 @@ func SetupRouter(
 		MaxAge:           300,
 	}))
 
+	// Public routes (no authentication required)
 	r.Get("/health/live", healthHandler.Liveness)
 	r.Get("/health/ready", healthHandler.Readiness)
-
 	r.Handle("/metrics", promhttp.Handler())
+
+	// Swagger documentation
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
 
 	logLevelHandler := customlogger.NewAtomicLevelServer(atomicLevel)
 	r.HandleFunc("/log/level", logLevelHandler.ServeHTTP)
 
+	// Protected routes (authentication required)
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Use(jwtAuth.Middleware)
+
 		r.Route("/products", func(r chi.Router) {
 			r.Get("/", productHandler.List)
 			r.Post("/", productHandler.Create)

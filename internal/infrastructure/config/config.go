@@ -11,6 +11,7 @@ type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	Redis    RedisConfig
+	Keycloak KeycloakConfig
 	App      AppConfig
 }
 
@@ -42,6 +43,12 @@ type RedisConfig struct {
 	PoolSize   int    `envconfig:"REDIS_POOL_SIZE" default:"10"`
 }
 
+type KeycloakConfig struct {
+	URL      string `envconfig:"KEYCLOAK_URL" default:"http://localhost:8180"`
+	Realm    string `envconfig:"KEYCLOAK_REALM" default:"product-api"`
+	ClientID string `envconfig:"KEYCLOAK_CLIENT_ID" default:"product-api-client"`
+}
+
 type AppConfig struct {
 	LogLevel    string `envconfig:"LOG_LEVEL" default:"info"`
 	Environment string `envconfig:"ENVIRONMENT" default:"development"`
@@ -68,4 +75,12 @@ func (c *RedisConfig) RedisAddr() string {
 
 func (c *AppConfig) IsProduction() bool {
 	return c.Environment == "production"
+}
+
+func (c *KeycloakConfig) JWKSURL() string {
+	return fmt.Sprintf("%s/realms/%s/protocol/openid-connect/certs", c.URL, c.Realm)
+}
+
+func (c *KeycloakConfig) Issuer() string {
+	return fmt.Sprintf("%s/realms/%s", c.URL, c.Realm)
 }

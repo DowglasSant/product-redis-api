@@ -1,0 +1,500 @@
+basePath: /
+definitions:
+  dto.CreateProductRequest:
+    description: Dados para criação de um novo produto
+    properties:
+      brand:
+        example: Apple
+        type: string
+      category:
+        example: electronics
+        type: string
+      description:
+        example: Smartphone Apple com chip A17 Pro
+        type: string
+      images:
+        example:
+        - https://example.com/image1.jpg
+        - https://example.com/image2.jpg
+        items:
+          type: string
+        type: array
+      name:
+        example: iPhone 15 Pro
+        type: string
+      reference_number:
+        example: REF-12345
+        type: string
+      sku:
+        example: SKU-IP15P-256
+        type: string
+      specifications:
+        additionalProperties: true
+        type: object
+      stock:
+        example: 100
+        type: integer
+    type: object
+  dto.ErrorResponse:
+    description: Estrutura de resposta de erro da API
+    properties:
+      code:
+        example: "400"
+        type: string
+      error:
+        example: validation_error
+        type: string
+      message:
+        example: Invalid request body
+        type: string
+    type: object
+  dto.ProductResponse:
+    description: Dados completos de um produto
+    properties:
+      brand:
+        example: Apple
+        type: string
+      category:
+        example: electronics
+        type: string
+      created_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      description:
+        example: Smartphone Apple com chip A17 Pro
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      images:
+        example:
+        - https://example.com/image1.jpg
+        items:
+          type: string
+        type: array
+      name:
+        example: iPhone 15 Pro
+        type: string
+      reference_number:
+        example: REF-12345
+        type: string
+      sku:
+        example: SKU-IP15P-256
+        type: string
+      specifications:
+        additionalProperties: true
+        type: object
+      stock:
+        example: 100
+        type: integer
+      updated_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      version:
+        example: 1
+        type: integer
+    type: object
+  dto.SuccessResponse:
+    description: Estrutura de resposta de sucesso da API
+    properties:
+      data: {}
+      message:
+        example: Operation completed successfully
+        type: string
+    type: object
+  dto.UpdateProductRequest:
+    description: Dados para atualização de um produto existente
+    properties:
+      brand:
+        example: Apple
+        type: string
+      category:
+        example: electronics
+        type: string
+      description:
+        example: Smartphone Apple com chip A17 Pro
+        type: string
+      images:
+        example:
+        - https://example.com/image1.jpg
+        items:
+          type: string
+        type: array
+      name:
+        example: iPhone 15 Pro Max
+        type: string
+      sku:
+        example: SKU-IP15PM-256
+        type: string
+      specifications:
+        additionalProperties: true
+        type: object
+      stock:
+        example: 50
+        type: integer
+    type: object
+  handler.HealthResponse:
+    description: Status de saúde da aplicação e seus serviços
+    properties:
+      services:
+        additionalProperties:
+          type: string
+        type: object
+      status:
+        example: healthy
+        type: string
+      timestamp:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: API de gerenciamento de produtos com cache Redis integrado
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Product API
+  version: "1.0"
+paths:
+  /api/v1/products:
+    get:
+      consumes:
+      - application/json
+      description: Retorna uma lista paginada de produtos
+      parameters:
+      - default: 50
+        description: Limite de resultados (máx 5000)
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ProductResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar produtos
+      tags:
+      - products
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo produto no sistema
+      parameters:
+      - description: Dados do produto
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar produto
+      tags:
+      - products
+  /api/v1/products/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove um produto pelo ID
+      parameters:
+      - description: ID do produto
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deletar produto
+      tags:
+      - products
+    get:
+      consumes:
+      - application/json
+      description: Retorna um produto específico pelo ID
+      parameters:
+      - description: ID do produto
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar produto por ID
+      tags:
+      - products
+    put:
+      consumes:
+      - application/json
+      description: Atualiza um produto existente pelo ID
+      parameters:
+      - description: ID do produto
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados atualizados do produto
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar produto
+      tags:
+      - products
+  /api/v1/products/search/category:
+    get:
+      consumes:
+      - application/json
+      description: Retorna produtos que correspondem à categoria especificada
+      parameters:
+      - description: Nome da categoria
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 50
+        description: Limite de resultados (máx 5000)
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ProductResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar produtos por categoria
+      tags:
+      - products
+  /api/v1/products/search/name:
+    get:
+      consumes:
+      - application/json
+      description: Retorna produtos que correspondem ao termo de busca no nome
+      parameters:
+      - description: Termo de busca
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 50
+        description: Limite de resultados (máx 5000)
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset para paginação
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ProductResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar produtos por nome
+      tags:
+      - products
+  /health/live:
+    get:
+      consumes:
+      - application/json
+      description: Verifica se a aplicação está rodando
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+      summary: Liveness check
+      tags:
+      - health
+  /health/ready:
+    get:
+      consumes:
+      - application/json
+      description: Verifica se a aplicação está pronta para receber requisições (database
+        e cache)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+      summary: Readiness check
+      tags:
+      - health
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

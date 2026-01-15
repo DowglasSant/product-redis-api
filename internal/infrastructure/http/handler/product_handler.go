@@ -47,6 +47,20 @@ func NewProductHandler(
 	}
 }
 
+// Create godoc
+// @Summary      Criar produto
+// @Description  Cria um novo produto no sistema
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        product  body      dto.CreateProductRequest  true  "Dados do produto"
+// @Success      201      {object}  dto.ProductResponse
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      409      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Security     BearerAuth
+// @Router       /api/v1/products [post]
 func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -84,6 +98,22 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusCreated, dto.ToProductResponse(product))
 }
 
+// Update godoc
+// @Summary      Atualizar produto
+// @Description  Atualiza um produto existente pelo ID
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        id       path      string                    true  "ID do produto"
+// @Param        product  body      dto.UpdateProductRequest  true  "Dados atualizados do produto"
+// @Success      200      {object}  dto.ProductResponse
+// @Failure      400      {object}  dto.ErrorResponse
+// @Failure      401      {object}  dto.ErrorResponse
+// @Failure      404      {object}  dto.ErrorResponse
+// @Failure      409      {object}  dto.ErrorResponse
+// @Failure      500      {object}  dto.ErrorResponse
+// @Security     BearerAuth
+// @Router       /api/v1/products/{id} [put]
 func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
@@ -130,6 +160,20 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto.ToProductResponse(product))
 }
 
+// Delete godoc
+// @Summary      Deletar produto
+// @Description  Remove um produto pelo ID
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "ID do produto"
+// @Success      200  {object}  dto.SuccessResponse
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Security     BearerAuth
+// @Router       /api/v1/products/{id} [delete]
 func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
@@ -151,6 +195,20 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Get godoc
+// @Summary      Buscar produto por ID
+// @Description  Retorna um produto específico pelo ID
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "ID do produto"
+// @Success      200  {object}  dto.ProductResponse
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Security     BearerAuth
+// @Router       /api/v1/products/{id} [get]
 func (h *ProductHandler) Get(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
@@ -171,6 +229,19 @@ func (h *ProductHandler) Get(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto.ToProductResponse(product))
 }
 
+// List godoc
+// @Summary      Listar produtos
+// @Description  Retorna uma lista paginada de produtos
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        limit   query     int  false  "Limite de resultados (máx 5000)"  default(50)
+// @Param        offset  query     int  false  "Offset para paginação"            default(0)
+// @Success      200     {array}   dto.ProductResponse
+// @Failure      401     {object}  dto.ErrorResponse
+// @Failure      500     {object}  dto.ErrorResponse
+// @Security     BearerAuth
+// @Router       /api/v1/products [get]
 func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit, offset := h.getPagination(r)
 
@@ -183,6 +254,21 @@ func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto.ToProductResponseList(products))
 }
 
+// SearchByName godoc
+// @Summary      Buscar produtos por nome
+// @Description  Retorna produtos que correspondem ao termo de busca no nome
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        q       query     string  true   "Termo de busca"
+// @Param        limit   query     int     false  "Limite de resultados (máx 5000)"  default(50)
+// @Param        offset  query     int     false  "Offset para paginação"            default(0)
+// @Success      200     {array}   dto.ProductResponse
+// @Failure      400     {object}  dto.ErrorResponse
+// @Failure      401     {object}  dto.ErrorResponse
+// @Failure      500     {object}  dto.ErrorResponse
+// @Security     BearerAuth
+// @Router       /api/v1/products/search/name [get]
 func (h *ProductHandler) SearchByName(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("q")
 	if name == "" {
@@ -201,6 +287,21 @@ func (h *ProductHandler) SearchByName(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto.ToProductResponseList(products))
 }
 
+// SearchByCategory godoc
+// @Summary      Buscar produtos por categoria
+// @Description  Retorna produtos que correspondem à categoria especificada
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        q       query     string  true   "Nome da categoria"
+// @Param        limit   query     int     false  "Limite de resultados (máx 5000)"  default(50)
+// @Param        offset  query     int     false  "Offset para paginação"            default(0)
+// @Success      200     {array}   dto.ProductResponse
+// @Failure      400     {object}  dto.ErrorResponse
+// @Failure      401     {object}  dto.ErrorResponse
+// @Failure      500     {object}  dto.ErrorResponse
+// @Security     BearerAuth
+// @Router       /api/v1/products/search/category [get]
 func (h *ProductHandler) SearchByCategory(w http.ResponseWriter, r *http.Request) {
 	category := r.URL.Query().Get("q")
 	if category == "" {

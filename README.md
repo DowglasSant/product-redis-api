@@ -8,6 +8,7 @@ API de gerenciamento de produtos com cache Redis integrado, desenvolvida em Go u
 - **Cache Redis Inteligente**: Write-through strategy com índices otimizados para busca rápida
 - **PostgreSQL**: Banco de dados relacional com optimistic locking para concorrência
 - **ULID Determinístico**: IDs únicos gerados a partir de nome + número de referência
+- **Autenticação JWT com Keycloak**: Integração com Identity Provider para segurança das rotas
 - **Observabilidade Completa**: Logs estruturados, métricas Prometheus, health checks
 - **Production-Ready**: Graceful shutdown, timeouts configuráveis, CORS, middleware de segurança
 
@@ -33,6 +34,7 @@ API de gerenciamento de produtos com cache Redis integrado, desenvolvida em Go u
 - Docker e Docker Compose
 - PostgreSQL 15+
 - Redis 7+
+- Keycloak 24+ (para autenticação)
 
 ## Configuração Rápida
 
@@ -46,11 +48,13 @@ cp .env.example .env
 # As configurações padrão já funcionam para desenvolvimento local
 ```
 
-### 2. Inicie os serviços (PostgreSQL e Redis)
+### 2. Inicie os serviços (PostgreSQL, Redis e Keycloak)
 
 ```bash
 docker-compose up -d
 ```
+
+**Aguarde o Keycloak iniciar** (pode levar ~60 segundos na primeira execução).
 
 ### 3. Instale as dependências
 
@@ -87,7 +91,66 @@ CREATE INDEX IF NOT EXISTS idx_products_reference ON products (reference_number)
 CREATE INDEX IF NOT EXISTS idx_products_created_at ON products (created_at DESC);
 ```
 
-### 5. Inicie a API
+### 5. Configure o Keycloak
+
+O Keycloak precisa ser configurado com realm, client e usuário. Execute os comandos abaixo para configuração automática:
+
+```bash
+# Obter token de admin
+ADMIN_TOKEN=$(curl -s -X POST "http://localhost:8180/realms/master/protocol/openid-connect/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin" \
+  -d "password=admin" \
+  -d "grant_type=password" \
+  -d "client_id=admin-cli" | jq -r '.access_token')
+
+# Criar realm
+curl -s -X POST "http://localhost:8180/admin/realms" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"realm": "product-api", "enabled": true}'
+
+# Criar client
+curl -s -X POST "http://localhost:8180/admin/realms/product-api/clients" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientId": "product-api-client",
+    "enabled": true,
+    "publicClient": false,
+    "secret": "product-api-secret",
+    "directAccessGrantsEnabled": true,
+    "serviceAccountsEnabled": true,
+    "redirectUris": ["*"],
+    "webOrigins": ["*"]
+  }'
+
+# Criar usuário de teste
+curl -s -X POST "http://localhost:8180/admin/realms/product-api/users" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "testuser",
+    "email": "testuser@example.com",
+    "firstName": "Test",
+    "lastName": "User",
+    "enabled": true,
+    "emailVerified": true
+  }'
+
+# Obter ID do usuário e definir senha
+USER_ID=$(curl -s "http://localhost:8180/admin/realms/product-api/users?username=testuser" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" | jq -r '.[0].id')
+
+curl -s -X PUT "http://localhost:8180/admin/realms/product-api/users/$USER_ID/reset-password" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"type": "password", "value": "testpass", "temporary": false}'
+```
+
+Ou acesse o console do Keycloak em `http://localhost:8180` (admin/admin) para configurar manualmente.
+
+### 6. Inicie a API
 
 ```bash
 go run cmd/api/main.go
@@ -126,7 +189,36 @@ Um produto possui os seguintes campos:
 
 ## Endpoints da API
 
-### Health Checks
+### Autenticação
+
+A API usa autenticação JWT via Keycloak. Para acessar as rotas protegidas, é necessário obter um token:
+
+```bash
+# Obter token de acesso
+curl -X POST "http://localhost:8180/realms/product-api/protocol/openid-connect/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=testuser" \
+  -d "password=testpass" \
+  -d "grant_type=password" \
+  -d "client_id=product-api-client" \
+  -d "client_secret=product-api-secret"
+
+# Resposta:
+# {
+#   "access_token": "eyJhbGciOiJSUzI1NiIsInR5cC...",
+#   "expires_in": 3600,
+#   "token_type": "Bearer",
+#   ...
+# }
+```
+
+Use o token nas requisições:
+
+```bash
+curl -H "Authorization: Bearer <access_token>" http://localhost:8080/api/v1/products
+```
+
+### Rotas Públicas (sem autenticação)
 
 ```bash
 # Liveness probe (Kubernetes)
@@ -134,7 +226,17 @@ GET /health/live
 
 # Readiness probe (verifica DB + Redis)
 GET /health/ready
+
+# Métricas Prometheus
+GET /metrics
+
+# Log level dinâmico
+GET/PUT /log/level
 ```
+
+### Rotas Protegidas (requer JWT)
+
+Todas as rotas abaixo requerem o header `Authorization: Bearer <token>`.
 
 ### Produtos
 
@@ -471,6 +573,11 @@ REDIS_PORT=6379
 REDIS_PASSWORD=pass
 REDIS_DB=0
 
+# Keycloak
+KEYCLOAK_URL=http://localhost:8180
+KEYCLOAK_REALM=product-api
+KEYCLOAK_CLIENT_ID=product-api-client
+
 # Application
 LOG_LEVEL=info
 ENVIRONMENT=development
@@ -517,6 +624,9 @@ readinessProbe:
 
 ## Segurança
 
+- **Autenticação JWT**: Integração com Keycloak para validação de tokens
+- **Rotas protegidas**: Todas as rotas de produtos requerem autenticação
+- **JWKS dinâmico**: Chaves públicas buscadas automaticamente do Keycloak
 - Sem preço no modelo de produto (segregação de responsabilidades)
 - Validação de entrada em todos os endpoints
 - Logs estruturados sem informações sensíveis
@@ -536,8 +646,7 @@ readinessProbe:
 
 - Busca por nome usa `LIKE` no PostgreSQL (não é full-text search avançado)
 - Cache Redis não tem TTL (requer mais memória)
-- Sem autenticação/autorização (deve ser adicionado via API Gateway)
-- Sem rate limiting (deve ser adicionado via API Gateway)
+- Sem rate limiting (deve ser adicionado via API Gateway ou implementado)
 
 ## Próximos Passos Sugeridos
 

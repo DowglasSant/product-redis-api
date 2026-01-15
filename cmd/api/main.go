@@ -9,17 +9,38 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/dowglassantana/product-redis-api/docs"
 	"github.com/dowglassantana/product-redis-api/internal/application/usecase"
 	"github.com/dowglassantana/product-redis-api/internal/infrastructure/cache"
 	"github.com/dowglassantana/product-redis-api/internal/infrastructure/config"
 	"github.com/dowglassantana/product-redis-api/internal/infrastructure/database"
 	"github.com/dowglassantana/product-redis-api/internal/infrastructure/http/handler"
+	"github.com/dowglassantana/product-redis-api/internal/infrastructure/http/middleware"
 	"github.com/dowglassantana/product-redis-api/internal/infrastructure/http/router"
 	"github.com/dowglassantana/product-redis-api/internal/infrastructure/logger"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
+
+// @title Product API
+// @version 1.0
+// @description API de gerenciamento de produtos com cache Redis integrado
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.email support@example.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8081
+// @BasePath /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
 	cfg, err := config.Load()
@@ -78,7 +99,9 @@ func main() {
 	)
 	healthHandler := handler.NewHealthHandler(productRepo, cacheRepo, log)
 
-	r := router.SetupRouter(productHandler, healthHandler, atomicLevel, log)
+	jwtAuth := middleware.NewJWTAuth(&cfg.Keycloak, log)
+
+	r := router.SetupRouter(productHandler, healthHandler, jwtAuth, atomicLevel, log)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),

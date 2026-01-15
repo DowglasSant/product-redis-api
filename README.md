@@ -1,4 +1,4 @@
-# Product Redis API
+# Product Redis API (Go)
 
 API de gerenciamento de produtos com cache Redis integrado, desenvolvida em Go usando Clean Architecture.
 

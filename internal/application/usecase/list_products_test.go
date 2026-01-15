@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/dowglassantana/product-redis-api/internal/domain/entity"
-	"go.uber.org/zap"
 )
 
 func TestListProductsUseCase_Execute_CacheHit(t *testing.T) {
@@ -27,7 +26,7 @@ func TestListProductsUseCase_Execute_CacheHit(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewListProductsUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), 10, 0)
@@ -63,7 +62,7 @@ func TestListProductsUseCase_Execute_CacheMiss_DatabaseSuccess(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewListProductsUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), 10, 0)
@@ -97,7 +96,7 @@ func TestListProductsUseCase_Execute_DatabaseError(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewListProductsUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), 10, 0)
@@ -132,7 +131,7 @@ func TestListProductsUseCase_Execute_CacheError_FallbackToDatabase(t *testing.T)
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewListProductsUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), 10, 0)
@@ -174,7 +173,7 @@ func TestListProductsUseCase_Execute_PartialCacheMiss(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewListProductsUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), 10, 0)
@@ -216,7 +215,7 @@ func TestListProductsUseCase_Execute_Pagination(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewListProductsUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), 2, 0)
@@ -254,7 +253,7 @@ func TestListProductsUseCase_Execute_EmptyResult(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewListProductsUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), 10, 0)
@@ -292,7 +291,7 @@ func TestListProductsUseCase_Execute_GetMultipleError(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewListProductsUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), 10, 0)

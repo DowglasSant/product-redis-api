@@ -9,7 +9,6 @@ import (
 
 	"github.com/dowglassantana/product-redis-api/internal/domain/entity"
 	"github.com/dowglassantana/product-redis-api/internal/domain/repository"
-	"go.uber.org/zap"
 )
 
 func TestDeleteProductUseCase_Execute_Success(t *testing.T) {
@@ -30,7 +29,7 @@ func TestDeleteProductUseCase_Execute_Success(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewDeleteProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	err := uc.Execute(context.Background(), existingProduct.ID)
@@ -56,7 +55,7 @@ func TestDeleteProductUseCase_Execute_DatabaseError(t *testing.T) {
 	mockCacheRepo := &MockCacheRepository{}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewDeleteProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	err := uc.Execute(context.Background(), "some-id")
@@ -98,7 +97,7 @@ func TestDeleteProductUseCase_Execute_CacheCleanupOnSuccess(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewDeleteProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	err := uc.Execute(context.Background(), existingProduct.ID)
@@ -151,7 +150,7 @@ func TestDeleteProductUseCase_Execute_CacheCleanupWithoutProductInfo(t *testing.
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewDeleteProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	err := uc.Execute(context.Background(), "some-product-id")
@@ -204,7 +203,7 @@ func TestDeleteProductUseCase_Execute_CacheErrorsDoNotFail(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewDeleteProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	err := uc.Execute(context.Background(), existingProduct.ID)
@@ -224,7 +223,7 @@ func TestDeleteProductUseCase_Execute_ShortProductID(t *testing.T) {
 	mockCacheRepo := &MockCacheRepository{}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewDeleteProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	err := uc.Execute(context.Background(), "abc")

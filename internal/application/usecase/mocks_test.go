@@ -212,3 +212,11 @@ func newTestProductWithData(name, ref, category string) *entity.Product {
 	)
 	return product
 }
+
+// MockLogger implements port.Logger for testing
+type MockLogger struct{}
+
+func (m *MockLogger) Debug(msg string, keysAndValues ...interface{}) {}
+func (m *MockLogger) Info(msg string, keysAndValues ...interface{})  {}
+func (m *MockLogger) Warn(msg string, keysAndValues ...interface{})  {}
+func (m *MockLogger) Error(msg string, keysAndValues ...interface{}) {}

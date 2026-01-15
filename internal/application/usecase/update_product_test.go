@@ -8,7 +8,6 @@ import (
 	"github.com/dowglassantana/product-redis-api/internal/application/port"
 	"github.com/dowglassantana/product-redis-api/internal/domain/entity"
 	"github.com/dowglassantana/product-redis-api/internal/domain/repository"
-	"go.uber.org/zap"
 )
 
 func TestUpdateProductUseCase_Execute_Success(t *testing.T) {
@@ -27,7 +26,7 @@ func TestUpdateProductUseCase_Execute_Success(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewUpdateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.UpdateProductInput{
@@ -76,7 +75,7 @@ func TestUpdateProductUseCase_Execute_ProductNotFound(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewUpdateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.UpdateProductInput{
@@ -113,7 +112,7 @@ func TestUpdateProductUseCase_Execute_NoChanges(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewUpdateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.UpdateProductInput{
@@ -158,7 +157,7 @@ func TestUpdateProductUseCase_Execute_VersionConflict(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewUpdateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.UpdateProductInput{
@@ -192,7 +191,7 @@ func TestUpdateProductUseCase_Execute_InvalidInput(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewUpdateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	tests := []struct {
@@ -255,7 +254,7 @@ func TestUpdateProductUseCase_Execute_DatabaseError(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewUpdateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.UpdateProductInput{
@@ -295,7 +294,7 @@ func TestUpdateProductUseCase_Execute_FetchFromDatabaseOnCacheMiss(t *testing.T)
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewUpdateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.UpdateProductInput{
@@ -348,7 +347,7 @@ func TestUpdateProductUseCase_Execute_CategoryIndexUpdate(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewUpdateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.UpdateProductInput{
@@ -401,7 +400,7 @@ func TestUpdateProductUseCase_Execute_NameIndexUpdate(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewUpdateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.UpdateProductInput{

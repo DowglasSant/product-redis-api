@@ -7,21 +7,20 @@ import (
 	"github.com/dowglassantana/product-redis-api/internal/application/utils"
 	"github.com/dowglassantana/product-redis-api/internal/domain/entity"
 	"github.com/dowglassantana/product-redis-api/internal/domain/repository"
-	"go.uber.org/zap"
 )
 
 type ListProductsUseCase struct {
 	productRepo repository.ProductRepository
 	cacheRepo   repository.CacheRepository
 	cacheKeys   port.CacheKeyGenerator
-	logger      *zap.Logger
+	logger      port.Logger
 }
 
 func NewListProductsUseCase(
 	productRepo repository.ProductRepository,
 	cacheRepo repository.CacheRepository,
 	cacheKeys port.CacheKeyGenerator,
-	logger *zap.Logger,
+	logger port.Logger,
 ) *ListProductsUseCase {
 	return &ListProductsUseCase{
 		productRepo: productRepo,
@@ -33,8 +32,8 @@ func NewListProductsUseCase(
 
 func (uc *ListProductsUseCase) Execute(ctx context.Context, limit, offset int) ([]*entity.Product, error) {
 	uc.logger.Debug("listing products",
-		zap.Int("limit", limit),
-		zap.Int("offset", offset),
+		"limit", limit,
+		"offset", offset,
 	)
 
 	products, cacheHit := uc.getFromCache(ctx)
@@ -46,7 +45,7 @@ func (uc *ListProductsUseCase) Execute(ctx context.Context, limit, offset int) (
 	products, err := uc.productRepo.FindAll(ctx, limit, offset)
 	if err != nil {
 		uc.logger.Error("failed to fetch products from database",
-			zap.Error(err),
+			"error", err,
 		)
 		return nil, err
 	}
@@ -58,7 +57,7 @@ func (uc *ListProductsUseCase) getFromCache(ctx context.Context) ([]*entity.Prod
 	productIDs, err := uc.cacheRepo.GetSet(ctx, uc.cacheKeys.AllProductsKey())
 	if err != nil {
 		uc.logger.Debug("failed to get all_products set",
-			zap.Error(err),
+			"error", err,
 		)
 		return nil, false
 	}
@@ -75,21 +74,21 @@ func (uc *ListProductsUseCase) getFromCache(ctx context.Context) ([]*entity.Prod
 	products, err := uc.cacheRepo.GetMultiple(ctx, keys)
 	if err != nil {
 		uc.logger.Debug("failed to get products from cache",
-			zap.Error(err),
+			"error", err,
 		)
 		return nil, false
 	}
 
 	if len(products) < len(productIDs) {
 		uc.logger.Debug("partial cache miss",
-			zap.Int("expected", len(productIDs)),
-			zap.Int("got", len(products)),
+			"expected", len(productIDs),
+			"got", len(products),
 		)
 		return nil, false
 	}
 
 	uc.logger.Debug("cache hit for all products",
-		zap.Int("count", len(products)),
+		"count", len(products),
 	)
 
 	return products, true

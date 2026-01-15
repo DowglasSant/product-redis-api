@@ -7,21 +7,20 @@ import (
 	"github.com/dowglassantana/product-redis-api/internal/application/utils"
 	"github.com/dowglassantana/product-redis-api/internal/domain/entity"
 	"github.com/dowglassantana/product-redis-api/internal/domain/repository"
-	"go.uber.org/zap"
 )
 
 type SearchProductsByCategoryUseCase struct {
 	productRepo repository.ProductRepository
 	cacheRepo   repository.CacheRepository
 	cacheKeys   port.CacheKeyGenerator
-	logger      *zap.Logger
+	logger      port.Logger
 }
 
 func NewSearchProductsByCategoryUseCase(
 	productRepo repository.ProductRepository,
 	cacheRepo repository.CacheRepository,
 	cacheKeys port.CacheKeyGenerator,
-	logger *zap.Logger,
+	logger port.Logger,
 ) *SearchProductsByCategoryUseCase {
 	return &SearchProductsByCategoryUseCase{
 		productRepo: productRepo,
@@ -33,9 +32,9 @@ func NewSearchProductsByCategoryUseCase(
 
 func (uc *SearchProductsByCategoryUseCase) Execute(ctx context.Context, category string, limit, offset int) ([]*entity.Product, error) {
 	uc.logger.Debug("searching products by category",
-		zap.String("category", category),
-		zap.Int("limit", limit),
-		zap.Int("offset", offset),
+		"category", category,
+		"limit", limit,
+		"offset", offset,
 	)
 
 	products := uc.searchInCache(ctx, category)
@@ -44,14 +43,14 @@ func (uc *SearchProductsByCategoryUseCase) Execute(ctx context.Context, category
 	}
 
 	uc.logger.Debug("cache miss - searching in database",
-		zap.String("category", category),
+		"category", category,
 	)
 
 	products, err := uc.productRepo.FindByCategory(ctx, category, limit, offset)
 	if err != nil {
 		uc.logger.Error("failed to search products by category in database",
-			zap.Error(err),
-			zap.String("category", category),
+			"error", err,
+			"category", category,
 		)
 		return nil, err
 	}
@@ -75,7 +74,7 @@ func (uc *SearchProductsByCategoryUseCase) searchInCache(ctx context.Context, ca
 	products, err := uc.cacheRepo.GetMultiple(ctx, keys)
 	if err != nil {
 		uc.logger.Debug("failed to get products from cache",
-			zap.Error(err),
+			"error", err,
 		)
 		return nil
 	}
@@ -85,8 +84,8 @@ func (uc *SearchProductsByCategoryUseCase) searchInCache(ctx context.Context, ca
 	}
 
 	uc.logger.Debug("cache hit for category search",
-		zap.String("category", category),
-		zap.Int("count", len(products)),
+		"category", category,
+		"count", len(products),
 	)
 
 	return products

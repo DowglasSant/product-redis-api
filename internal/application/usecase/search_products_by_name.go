@@ -7,21 +7,20 @@ import (
 	"github.com/dowglassantana/product-redis-api/internal/application/utils"
 	"github.com/dowglassantana/product-redis-api/internal/domain/entity"
 	"github.com/dowglassantana/product-redis-api/internal/domain/repository"
-	"go.uber.org/zap"
 )
 
 type SearchProductsByNameUseCase struct {
 	productRepo repository.ProductRepository
 	cacheRepo   repository.CacheRepository
 	cacheKeys   port.CacheKeyGenerator
-	logger      *zap.Logger
+	logger      port.Logger
 }
 
 func NewSearchProductsByNameUseCase(
 	productRepo repository.ProductRepository,
 	cacheRepo repository.CacheRepository,
 	cacheKeys port.CacheKeyGenerator,
-	logger *zap.Logger,
+	logger port.Logger,
 ) *SearchProductsByNameUseCase {
 	return &SearchProductsByNameUseCase{
 		productRepo: productRepo,
@@ -33,9 +32,9 @@ func NewSearchProductsByNameUseCase(
 
 func (uc *SearchProductsByNameUseCase) Execute(ctx context.Context, name string, limit, offset int) ([]*entity.Product, error) {
 	uc.logger.Debug("searching products by name",
-		zap.String("name", name),
-		zap.Int("limit", limit),
-		zap.Int("offset", offset),
+		"name", name,
+		"limit", limit,
+		"offset", offset,
 	)
 
 	products := uc.searchInCache(ctx, name)
@@ -44,14 +43,14 @@ func (uc *SearchProductsByNameUseCase) Execute(ctx context.Context, name string,
 	}
 
 	uc.logger.Debug("cache miss - searching in database",
-		zap.String("name", name),
+		"name", name,
 	)
 
 	products, err := uc.productRepo.FindByName(ctx, name, limit, offset)
 	if err != nil {
 		uc.logger.Error("failed to search products by name in database",
-			zap.Error(err),
-			zap.String("name", name),
+			"error", err,
+			"name", name,
 		)
 		return nil, err
 	}
@@ -75,7 +74,7 @@ func (uc *SearchProductsByNameUseCase) searchInCache(ctx context.Context, name s
 	products, err := uc.cacheRepo.GetMultiple(ctx, keys)
 	if err != nil {
 		uc.logger.Debug("failed to get products from cache",
-			zap.Error(err),
+			"error", err,
 		)
 		return nil
 	}
@@ -85,8 +84,8 @@ func (uc *SearchProductsByNameUseCase) searchInCache(ctx context.Context, name s
 	}
 
 	uc.logger.Debug("cache hit for name search",
-		zap.String("name", name),
-		zap.Int("count", len(products)),
+		"name", name,
+		"count", len(products),
 	)
 
 	return products

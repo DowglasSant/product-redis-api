@@ -2,13 +2,10 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/dowglassantana/product-redis-api/internal/application/port"
-	"github.com/dowglassantana/product-redis-api/internal/domain/entity"
-	"github.com/dowglassantana/product-redis-api/internal/domain/repository"
 	"github.com/dowglassantana/product-redis-api/internal/infrastructure/http/dto"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -82,16 +79,7 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	product, err := h.createUseCase.Execute(r.Context(), input)
 	if err != nil {
-		if errors.Is(err, repository.ErrProductAlreadyExists) {
-			h.respondError(w, http.StatusConflict, "product_exists", "Product already exists", err)
-			return
-		}
-		if errors.Is(err, entity.ErrInvalidName) || errors.Is(err, entity.ErrInvalidReference) ||
-			errors.Is(err, entity.ErrInvalidCategory) || errors.Is(err, entity.ErrInvalidStock) {
-			h.respondError(w, http.StatusBadRequest, "validation_error", err.Error(), err)
-			return
-		}
-		h.respondError(w, http.StatusInternalServerError, "internal_error", "Failed to create product", err)
+		h.handleDomainError(w, err, "Failed to create product")
 		return
 	}
 
@@ -140,20 +128,7 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	product, err := h.updateUseCase.Execute(r.Context(), id, input)
 	if err != nil {
-		if errors.Is(err, repository.ErrProductNotFound) {
-			h.respondError(w, http.StatusNotFound, "product_not_found", "Product not found", err)
-			return
-		}
-		if errors.Is(err, repository.ErrVersionConflict) {
-			h.respondError(w, http.StatusConflict, "version_conflict", "Product was modified by another process", err)
-			return
-		}
-		if errors.Is(err, entity.ErrInvalidName) || errors.Is(err, entity.ErrInvalidCategory) ||
-			errors.Is(err, entity.ErrInvalidStock) {
-			h.respondError(w, http.StatusBadRequest, "validation_error", err.Error(), err)
-			return
-		}
-		h.respondError(w, http.StatusInternalServerError, "internal_error", "Failed to update product", err)
+		h.handleDomainError(w, err, "Failed to update product")
 		return
 	}
 
@@ -182,11 +157,7 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.deleteUseCase.Execute(r.Context(), id); err != nil {
-		if errors.Is(err, repository.ErrProductNotFound) {
-			h.respondError(w, http.StatusNotFound, "product_not_found", "Product not found", err)
-			return
-		}
-		h.respondError(w, http.StatusInternalServerError, "internal_error", "Failed to delete product", err)
+		h.handleDomainError(w, err, "Failed to delete product")
 		return
 	}
 
@@ -218,11 +189,7 @@ func (h *ProductHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	product, err := h.getUseCase.Execute(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, repository.ErrProductNotFound) {
-			h.respondError(w, http.StatusNotFound, "product_not_found", "Product not found", err)
-			return
-		}
-		h.respondError(w, http.StatusInternalServerError, "internal_error", "Failed to get product", err)
+		h.handleDomainError(w, err, "Failed to get product")
 		return
 	}
 
@@ -360,4 +327,13 @@ func (h *ProductHandler) respondError(w http.ResponseWriter, status int, code, m
 		Error:   code,
 		Message: message,
 	})
+}
+
+// handleDomainError usa o tradutor de erros para converter erros de domínio em respostas HTTP.
+func (h *ProductHandler) handleDomainError(w http.ResponseWriter, err error, fallbackMessage string) {
+	if httpErr := TranslateDomainError(err); httpErr != nil {
+		h.respondError(w, httpErr.StatusCode, httpErr.Code, httpErr.Message, err)
+		return
+	}
+	h.respondError(w, http.StatusInternalServerError, "internal_error", fallbackMessage, err)
 }

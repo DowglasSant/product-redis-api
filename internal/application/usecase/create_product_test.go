@@ -8,7 +8,6 @@ import (
 	"github.com/dowglassantana/product-redis-api/internal/application/port"
 	"github.com/dowglassantana/product-redis-api/internal/domain/entity"
 	"github.com/dowglassantana/product-redis-api/internal/domain/repository"
-	"go.uber.org/zap"
 )
 
 func TestCreateProductUseCase_Execute_Success(t *testing.T) {
@@ -25,7 +24,7 @@ func TestCreateProductUseCase_Execute_Success(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewCreateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.CreateProductInput{
@@ -63,7 +62,7 @@ func TestCreateProductUseCase_Execute_InvalidInput(t *testing.T) {
 	mockProductRepo := &MockProductRepository{}
 	mockCacheRepo := &MockCacheRepository{}
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewCreateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	tests := []struct {
@@ -141,7 +140,7 @@ func TestCreateProductUseCase_Execute_ProductAlreadyExistsInCache(t *testing.T) 
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewCreateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.CreateProductInput{
@@ -188,7 +187,7 @@ func TestCreateProductUseCase_Execute_ProductExistsWithDifferentData(t *testing.
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewCreateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.CreateProductInput{
@@ -234,7 +233,7 @@ func TestCreateProductUseCase_Execute_DatabaseError(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewCreateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.CreateProductInput{
@@ -269,7 +268,7 @@ func TestCreateProductUseCase_Execute_ProductAlreadyExistsInDatabase(t *testing.
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewCreateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.CreateProductInput{
@@ -310,7 +309,7 @@ func TestCreateProductUseCase_Execute_CacheUpdateFailure(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewCreateProductUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	input := port.CreateProductInput{

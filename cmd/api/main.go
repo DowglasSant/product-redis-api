@@ -79,13 +79,16 @@ func main() {
 	cacheRepo := cache.NewRedisRepository(redisClient)
 	cacheKeys := cache.NewRedisCacheKeyGenerator()
 
-	createUseCase := usecase.NewCreateProductUseCase(productRepo, cacheRepo, cacheKeys, log)
-	updateUseCase := usecase.NewUpdateProductUseCase(productRepo, cacheRepo, cacheKeys, log)
-	deleteUseCase := usecase.NewDeleteProductUseCase(productRepo, cacheRepo, cacheKeys, log)
-	getUseCase := usecase.NewGetProductUseCase(productRepo, cacheRepo, cacheKeys, log)
-	listUseCase := usecase.NewListProductsUseCase(productRepo, cacheRepo, cacheKeys, log)
-	searchByNameUseCase := usecase.NewSearchProductsByNameUseCase(productRepo, cacheRepo, cacheKeys, log)
-	searchByCategoryUseCase := usecase.NewSearchProductsByCategoryUseCase(productRepo, cacheRepo, cacheKeys, log)
+	// Cria o adapter do logger para os usecases (desacoplamento)
+	appLogger := logger.NewZapAdapter(log)
+
+	createUseCase := usecase.NewCreateProductUseCase(productRepo, cacheRepo, cacheKeys, appLogger)
+	updateUseCase := usecase.NewUpdateProductUseCase(productRepo, cacheRepo, cacheKeys, appLogger)
+	deleteUseCase := usecase.NewDeleteProductUseCase(productRepo, cacheRepo, cacheKeys, appLogger)
+	getUseCase := usecase.NewGetProductUseCase(productRepo, cacheRepo, cacheKeys, appLogger)
+	listUseCase := usecase.NewListProductsUseCase(productRepo, cacheRepo, cacheKeys, appLogger)
+	searchByNameUseCase := usecase.NewSearchProductsByNameUseCase(productRepo, cacheRepo, cacheKeys, appLogger)
+	searchByCategoryUseCase := usecase.NewSearchProductsByCategoryUseCase(productRepo, cacheRepo, cacheKeys, appLogger)
 
 	productHandler := handler.NewProductHandler(
 		createUseCase,

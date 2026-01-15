@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/dowglassantana/product-redis-api/internal/domain/entity"
-	"go.uber.org/zap"
 )
 
 func TestSearchProductsByCategoryUseCase_Execute_CacheHit(t *testing.T) {
@@ -29,7 +28,7 @@ func TestSearchProductsByCategoryUseCase_Execute_CacheHit(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewSearchProductsByCategoryUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), "Smartphones", 10, 0)
@@ -67,7 +66,7 @@ func TestSearchProductsByCategoryUseCase_Execute_CacheMiss_DatabaseSuccess(t *te
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewSearchProductsByCategoryUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), "Laptops", 10, 0)
@@ -101,7 +100,7 @@ func TestSearchProductsByCategoryUseCase_Execute_DatabaseError(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewSearchProductsByCategoryUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), "Category", 10, 0)
@@ -136,7 +135,7 @@ func TestSearchProductsByCategoryUseCase_Execute_CacheError_FallbackToDatabase(t
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewSearchProductsByCategoryUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), "Category", 10, 0)
@@ -176,7 +175,7 @@ func TestSearchProductsByCategoryUseCase_Execute_PartialCacheMiss(t *testing.T) 
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewSearchProductsByCategoryUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), "Category", 10, 0)
@@ -217,7 +216,7 @@ func TestSearchProductsByCategoryUseCase_Execute_Pagination(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewSearchProductsByCategoryUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), "Electronics", 2, 0)
@@ -255,7 +254,7 @@ func TestSearchProductsByCategoryUseCase_Execute_EmptyResult(t *testing.T) {
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewSearchProductsByCategoryUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), "NonExistent", 10, 0)
@@ -291,7 +290,7 @@ func TestSearchProductsByCategoryUseCase_Execute_GetMultipleError(t *testing.T) 
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewSearchProductsByCategoryUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	result, err := uc.Execute(context.Background(), "Category", 10, 0)
@@ -328,7 +327,7 @@ func TestSearchProductsByCategoryUseCase_Execute_CacheKeyGeneration(t *testing.T
 	}
 
 	mockCacheKeys := &MockCacheKeyGenerator{}
-	logger := zap.NewNop()
+	logger := &MockLogger{}
 	uc := NewSearchProductsByCategoryUseCase(mockProductRepo, mockCacheRepo, mockCacheKeys, logger)
 
 	_, err := uc.Execute(context.Background(), "SMARTPHONES", 10, 0)

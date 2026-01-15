@@ -9,6 +9,7 @@ API de gerenciamento de produtos com cache Redis integrado, desenvolvida em Go u
 - **PostgreSQL**: Banco de dados relacional com optimistic locking para concorrência
 - **ULID Determinístico**: IDs únicos gerados a partir de nome + número de referência
 - **Autenticação JWT com Keycloak**: Integração com Identity Provider para segurança das rotas
+- **Documentação Swagger/OpenAPI**: Documentação interativa da API
 - **Observabilidade Completa**: Logs estruturados, métricas Prometheus, health checks
 - **Production-Ready**: Graceful shutdown, timeouts configuráveis, CORS, middleware de segurança
 
@@ -232,6 +233,9 @@ GET /metrics
 
 # Log level dinâmico
 GET/PUT /log/level
+
+# Documentação Swagger
+GET /swagger/index.html
 ```
 
 ### Rotas Protegidas (requer JWT)
@@ -648,16 +652,58 @@ readinessProbe:
 - Cache Redis não tem TTL (requer mais memória)
 - Sem rate limiting (deve ser adicionado via API Gateway ou implementado)
 
+## Documentação Swagger
+
+A API possui documentação interativa via Swagger UI, acessível sem autenticação.
+
+### Acessando a Documentação
+
+```bash
+# Interface gráfica interativa
+http://localhost:8081/swagger/index.html
+
+# Especificação OpenAPI em JSON
+http://localhost:8081/swagger/doc.json
+
+# Especificação OpenAPI em YAML
+http://localhost:8081/swagger/doc.yaml
+```
+
+### Recursos da Documentação
+
+- **Autenticação integrada**: Configure o token JWT diretamente no Swagger UI clicando em "Authorize"
+- **Try it out**: Teste os endpoints diretamente pela interface
+- **Schemas completos**: Visualize a estrutura de requests e responses
+- **Exemplos**: Cada campo possui exemplos de valores válidos
+
+### Gerando/Atualizando a Documentação
+
+Se você modificar os handlers ou DTOs, regenere a documentação:
+
+```bash
+# Instalar swag CLI (se ainda não instalado)
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Gerar documentação
+swag init -g cmd/api/main.go -o docs
+```
+
+### Anotações Swagger
+
+As anotações estão nos arquivos:
+- `cmd/api/main.go` - Informações gerais da API e segurança
+- `internal/infrastructure/http/handler/*.go` - Documentação de cada endpoint
+- `internal/infrastructure/http/dto/*.go` - Schemas de request/response
+
 ## Próximos Passos Sugeridos
 
 1. Adicionar testes de integração
 2. Implementar full-text search com Elasticsearch
 3. Adicionar CI/CD pipeline
 4. Implementar cache warming strategy
-5. Adicionar OpenAPI/Swagger documentation
-6. Implementar event sourcing para auditoria
-7. Adicionar GraphQL endpoint
-8. Implementar sharding de cache por categoria
+5. Implementar event sourcing para auditoria
+6. Adicionar GraphQL endpoint
+7. Implementar sharding de cache por categoria
 
 ## Contribuindo
 

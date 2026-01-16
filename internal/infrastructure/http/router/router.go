@@ -38,12 +38,10 @@ func SetupRouter(
 		MaxAge:           300,
 	}))
 
-	// Public routes (no authentication required)
 	r.Get("/health/live", healthHandler.Liveness)
 	r.Get("/health/ready", healthHandler.Readiness)
 	r.Handle("/metrics", promhttp.Handler())
 
-	// Swagger documentation
 	r.Get("/swagger/*", httpSwagger.Handler(
 		httpSwagger.URL("/swagger/doc.json"),
 	))
@@ -51,7 +49,6 @@ func SetupRouter(
 	logLevelHandler := customlogger.NewAtomicLevelServer(atomicLevel)
 	r.HandleFunc("/log/level", logLevelHandler.ServeHTTP)
 
-	// Protected routes (authentication required)
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(jwtAuth.Middleware)
 

@@ -79,7 +79,6 @@ func main() {
 	cacheRepo := cache.NewRedisRepository(redisClient)
 	cacheKeys := cache.NewRedisCacheKeyGenerator()
 
-	// Cria o adapter do logger para os usecases (desacoplamento)
 	appLogger := logger.NewZapAdapter(log)
 
 	createUseCase := usecase.NewCreateProductUseCase(productRepo, cacheRepo, cacheKeys, appLogger)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -60,6 +61,14 @@ func main() {
 		zap.String("environment", cfg.App.Environment),
 		zap.Int("port", cfg.Server.Port),
 	)
+
+	// Inicia servidor pprof em porta separada para profiling
+	go func() {
+		log.Info("pprof server listening", zap.String("address", ":6060"))
+		if err := http.ListenAndServe(":6060", nil); err != nil {
+			log.Error("pprof server error", zap.Error(err))
+		}
+	}()
 
 	dbPool, err := initDatabase(cfg.Database)
 	if err != nil {

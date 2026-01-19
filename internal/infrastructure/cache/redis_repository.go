@@ -2,7 +2,6 @@ package cache
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -17,12 +16,21 @@ var (
 )
 
 type RedisRepository struct {
-	client *redis.Client
+	client     *redis.Client
+	serializer Serializer
 }
 
 func NewRedisRepository(client *redis.Client) *RedisRepository {
 	return &RedisRepository{
-		client: client,
+		client:     client,
+		serializer: NewMsgpackSerializer(),
+	}
+}
+
+func NewRedisRepositoryWithSerializer(client *redis.Client, serializer Serializer) *RedisRepository {
+	return &RedisRepository{
+		client:     client,
+		serializer: serializer,
 	}
 }
 
@@ -36,7 +44,7 @@ func (r *RedisRepository) Get(ctx context.Context, key string) (*entity.Product,
 	}
 
 	var product entity.Product
-	if err := json.Unmarshal(data, &product); err != nil {
+	if err := r.serializer.Unmarshal(data, &product); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal product: %w", err)
 	}
 
@@ -44,7 +52,7 @@ func (r *RedisRepository) Get(ctx context.Context, key string) (*entity.Product,
 }
 
 func (r *RedisRepository) Set(ctx context.Context, key string, product *entity.Product) error {
-	data, err := json.Marshal(product)
+	data, err := r.serializer.Marshal(product)
 	if err != nil {
 		return fmt.Errorf("failed to marshal product: %w", err)
 	}
@@ -120,7 +128,7 @@ func (r *RedisRepository) GetMultiple(ctx context.Context, keys []string) ([]*en
 		}
 
 		var product entity.Product
-		if err := json.Unmarshal(data, &product); err != nil {
+		if err := r.serializer.Unmarshal(data, &product); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal product: %w", err)
 		}
 

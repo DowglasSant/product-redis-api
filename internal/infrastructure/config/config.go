@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	Redis    RedisConfig
-	Keycloak KeycloakConfig
-	App      AppConfig
+	Server    ServerConfig
+	Database  DatabaseConfig
+	Redis     RedisConfig
+	Keycloak  KeycloakConfig
+	App       AppConfig
+	RateLimit RateLimitConfig
 }
 
 type ServerConfig struct {
@@ -52,6 +53,12 @@ type KeycloakConfig struct {
 type AppConfig struct {
 	LogLevel    string `envconfig:"LOG_LEVEL" default:"info"`
 	Environment string `envconfig:"ENVIRONMENT" default:"development"`
+}
+
+type RateLimitConfig struct {
+	Enabled           bool          `envconfig:"RATE_LIMIT_ENABLED" default:"true"`
+	RequestsPerWindow int           `envconfig:"RATE_LIMIT_REQUESTS" default:"100"`
+	WindowSize        time.Duration `envconfig:"RATE_LIMIT_WINDOW" default:"1m"`
 }
 
 func Load() (*Config, error) {

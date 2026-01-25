@@ -18,6 +18,7 @@ func SetupRouter(
 	productHandler *handler.ProductHandler,
 	healthHandler *handler.HealthHandler,
 	jwtAuth *middleware.JWTAuth,
+	rateLimiter *middleware.RateLimiter,
 	atomicLevel *zap.AtomicLevel,
 	logger *zap.Logger,
 ) http.Handler {
@@ -33,7 +34,7 @@ func SetupRouter(
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Request-ID"},
-		ExposedHeaders:   []string{"X-Request-ID"},
+		ExposedHeaders:   []string{"X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"},
 		AllowCredentials: false,
 		MaxAge:           300,
 	}))
@@ -51,6 +52,7 @@ func SetupRouter(
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(jwtAuth.Middleware)
+		r.Use(rateLimiter.Middleware)
 
 		r.Route("/products", func(r chi.Router) {
 			r.Get("/", productHandler.List)

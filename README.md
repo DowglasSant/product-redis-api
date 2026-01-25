@@ -9,6 +9,7 @@ API de gerenciamento de produtos com cache Redis integrado, desenvolvida em Go u
 - **PostgreSQL**: Banco de dados relacional com optimistic locking para concorrência
 - **ULID Determinístico**: IDs únicos gerados a partir de nome + número de referência
 - **Autenticação JWT com Keycloak**: Integração com Identity Provider para segurança das rotas
+- **Rate Limiting por Usuário**: Proteção contra abuso com sliding window via Redis
 - **Documentação Swagger/OpenAPI**: Documentação interativa da API
 - **Observabilidade Completa**: Logs estruturados, métricas Prometheus, health checks
 - **Production-Ready**: Graceful shutdown, timeouts configuráveis, CORS, middleware de segurança
@@ -585,6 +586,11 @@ KEYCLOAK_CLIENT_ID=product-api-client
 # Application
 LOG_LEVEL=info
 ENVIRONMENT=development
+
+# Rate Limiting
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_REQUESTS=100
+RATE_LIMIT_WINDOW=1m
 ```
 
 ## Deployment
@@ -631,6 +637,7 @@ readinessProbe:
 - **Autenticação JWT**: Integração com Keycloak para validação de tokens
 - **Rotas protegidas**: Todas as rotas de produtos requerem autenticação
 - **JWKS dinâmico**: Chaves públicas buscadas automaticamente do Keycloak
+- **Rate Limiting**: Proteção contra abuso com limites por usuário (sliding window)
 - Sem preço no modelo de produto (segregação de responsabilidades)
 - Validação de entrada em todos os endpoints
 - Logs estruturados sem informações sensíveis
@@ -646,11 +653,84 @@ readinessProbe:
 - Paginação em todos os endpoints de listagem
 - Pipeline Redis para operações em batch
 
+## Rate Limiting
+
+A API possui rate limiting por usuário para proteger contra abuso e garantir uso justo dos recursos.
+
+### Como Funciona
+
+- **Algoritmo**: Sliding Window Log (janela deslizante)
+- **Storage**: Redis (funciona em ambiente distribuído)
+- **Identificação**: User ID do JWT (com fallback para IP em requisições não autenticadas)
+- **Atomicidade**: Script Lua garante operações atômicas no Redis
+
+### Configuração
+
+```bash
+# Ativar/desativar rate limiting
+RATE_LIMIT_ENABLED=true
+
+# Máximo de requisições por janela
+RATE_LIMIT_REQUESTS=100
+
+# Tamanho da janela de tempo
+RATE_LIMIT_WINDOW=1m
+```
+
+Valores comuns para `RATE_LIMIT_WINDOW`: `30s`, `1m`, `5m`, `1h`
+
+### Headers de Resposta
+
+Toda requisição inclui headers informativos sobre o rate limit:
+
+```
+X-RateLimit-Limit: 100       # Limite máximo de requisições
+X-RateLimit-Remaining: 95    # Requisições restantes na janela
+X-RateLimit-Reset: 1706...   # Unix timestamp de quando a janela reseta
+```
+
+### Resposta quando Excede o Limite
+
+Quando o limite é excedido, a API retorna HTTP 429:
+
+```json
+{
+  "error": "rate_limit_exceeded",
+  "message": "Too many requests. Please try again later.",
+  "retry_after": 45
+}
+```
+
+Headers adicionais:
+```
+Retry-After: 45              # Segundos até poder tentar novamente
+```
+
+### Comportamento
+
+1. **Por usuário autenticado**: Cada usuário (identificado pelo `sub` do JWT) tem seu próprio contador
+2. **Fallback para IP**: Requisições sem JWT usam o IP como identificador
+3. **Fail-open**: Se o Redis falhar, a requisição é permitida (logs de erro são gerados)
+4. **Distribuído**: Funciona corretamente com múltiplas instâncias da API
+
+### Exemplo
+
+Com configuração `RATE_LIMIT_REQUESTS=10` e `RATE_LIMIT_WINDOW=1m`:
+
+```bash
+# Primeiras 10 requisições em 1 minuto: HTTP 200
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/products
+# X-RateLimit-Remaining: 9, 8, 7, ... 0
+
+# 11ª requisição: HTTP 429
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/products
+# {"error": "rate_limit_exceeded", "retry_after": 45}
+```
+
 ## Limitações Conhecidas
 
 - Busca por nome usa `LIKE` no PostgreSQL (não é full-text search avançado)
 - Cache Redis não tem TTL (requer mais memória)
-- Sem rate limiting (deve ser adicionado via API Gateway ou implementado)
 
 ## Documentação Swagger
 
@@ -704,6 +784,7 @@ As anotações estão nos arquivos:
 5. Implementar event sourcing para auditoria
 6. Adicionar GraphQL endpoint
 7. Implementar sharding de cache por categoria
+8. Adicionar rate limiting diferenciado por endpoint
 
 ## Contribuindo
 

@@ -112,7 +112,19 @@ func main() {
 
 	jwtAuth := middleware.NewJWTAuth(&cfg.Keycloak, log)
 
-	r := router.SetupRouter(productHandler, healthHandler, jwtAuth, atomicLevel, log)
+	rateLimiter := middleware.NewRateLimiter(redisClient, middleware.RateLimitConfig{
+		Enabled:           cfg.RateLimit.Enabled,
+		RequestsPerWindow: cfg.RateLimit.RequestsPerWindow,
+		WindowSize:        cfg.RateLimit.WindowSize,
+	}, log)
+
+	log.Info("rate limiter configured",
+		zap.Bool("enabled", cfg.RateLimit.Enabled),
+		zap.Int("requests_per_window", cfg.RateLimit.RequestsPerWindow),
+		zap.Duration("window_size", cfg.RateLimit.WindowSize),
+	)
+
+	r := router.SetupRouter(productHandler, healthHandler, jwtAuth, rateLimiter, atomicLevel, log)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
